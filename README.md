@@ -1,3 +1,6 @@
+This is the RSA lab of group 2 for the cryptology course.
+
+```
 usage: rsa.py 
 
 Generation of keys and encryption/decryption using the RSA algorithm.
@@ -24,3 +27,4 @@ examples:
 
   decrypt the file cipher.txt:
   rsa.py -d cipher.txt priv.key plain.txt
+```
