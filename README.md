@@ -16,6 +16,7 @@ optional arguments:
                         PLAIN.
   -l L                  The chunksize in number of characters (only used for
                         encryption/decryption)
+  -t STATS              Run tests and collect statistics in the file STATS.
 
 examples:
 

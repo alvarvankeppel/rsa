@@ -156,7 +156,7 @@ def main():
 	parser.add_argument('-e', help="Encrypt the file PLAIN using the key PRIV and save to CIPHER.", dest="encrypt", nargs=3, metavar=('PLAIN','PUB', 'CIPHER'), type=argparse.FileType('a+'))
 	parser.add_argument('-d', help="Decrypt the file CIPHER using the key PUB and save to PLAIN.", dest="decrypt", nargs=3, metavar=('CIPHER','PRIV', 'CIPHER'), type=argparse.FileType('a+'))
 	parser.add_argument('-l', help="The chunksize in number of characters (only used for encryption/decryption)", type=int, default=2)
-	parser.add_argument('-t', help="Run tests and collect statistics in the file STAT.", dest="test", metavar=('STATS'), type=argparse.FileType('w+'))
+	parser.add_argument('-t', help="Run tests and collect statistics in the file STATS.", dest="test", metavar=('STATS'), type=argparse.FileType('w+'))
 	args = parser.parse_args()
 	
 	# check exclusivity of arguments
@@ -254,7 +254,7 @@ def main():
 		
 		statsfile = args.test
 		
-		statsfile.write("   pq |  text |   l | generation time (us) | encryption time (us) | decryption time (us)\n")
+		statsfile.write("   pq |  text |   l | generation time (ms) | encryption time (ms) | decryption time (ms)\n")
 		
 		proc = 0
 		proc_step = 100.0 / (len(pq_range) * len(text_range) * len(l_range))
@@ -273,13 +273,17 @@ def main():
 			if d*e%phi != 1:
 				print("d*e % phi != 1")
 				continue
-			statsfile.write(" -----+-------+-----+----------------------+----------------------+---------------------\n")
+			statsfile.write(" =====+=======+=====+======================+======================+=====================\n")
 		
 			for text in text_range:
 				fname = "plain_"+str(text)+".txt"
 				pfile = open(fname, "r")
 				plain = pfile.read()
 				pfile.close()
+				tlen = len(plain)
+				
+				if text != 1:
+					statsfile.write(" -----+-------+-----+----------------------+----------------------+---------------------\n")
 				
 				for l in l_range:
 					print("completed " + str(round(proc,2)) + "%")
@@ -292,10 +296,10 @@ def main():
 					plainX = decrypt_text(cipher,l,d,n)
 					dec_time = clock() - dec_start
 					
-					t_g = round(gen_time / 1000000.0, 5)
-					e_g = round(enc_time / 1000000.0, 5)
-					d_g = round(dec_time / 1000000.0, 5)
-					statsfile.write("%5s | %5s | %3s | %20s | %20s | %20s\n" % (pq, text, l, t_g, e_g, d_g))
+					t_g = round(gen_time * 1000,0)
+					e_g = round(enc_time * 1000,0)
+					d_g = round(dec_time * 1000,0)
+					statsfile.write("%5s | %5s | %3s | %20i | %20i | %20i\n" % (pq, tlen, l, t_g, e_g, d_g))
 		
 		print("testing completed running")
 		statsfile.close()
