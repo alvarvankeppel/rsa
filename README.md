@@ -11,8 +11,7 @@ optional arguments:
                         PUB.
   -e PLAIN PUB CIPHER   Encrypt the file PLAIN using the key PRIV and save to
                         CIPHER.
-  -d CIPHER PRIV CIPHER
-                        Decrypt the file CIPHER using the key PUB and save to
+  -d CIPHER PRIV PLAIN  Decrypt the file CIPHER using the key PUB and save to
                         PLAIN.
   -l L                  The chunksize in number of characters (only used for
                         encryption/decryption)

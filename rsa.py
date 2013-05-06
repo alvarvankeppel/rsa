@@ -154,7 +154,7 @@ def main():
 		epilog=examples)
 	parser.add_argument('-g', help="Generate keys and store them in the files PRIV and PUB.", dest="generate", nargs=2, metavar=('PRIV','PUB'), type=argparse.FileType('w'))
 	parser.add_argument('-e', help="Encrypt the file PLAIN using the key PRIV and save to CIPHER.", dest="encrypt", nargs=3, metavar=('PLAIN','PUB', 'CIPHER'), type=argparse.FileType('a+'))
-	parser.add_argument('-d', help="Decrypt the file CIPHER using the key PUB and save to PLAIN.", dest="decrypt", nargs=3, metavar=('CIPHER','PRIV', 'CIPHER'), type=argparse.FileType('a+'))
+	parser.add_argument('-d', help="Decrypt the file CIPHER using the key PUB and save to PLAIN.", dest="decrypt", nargs=3, metavar=('CIPHER','PRIV', 'PLAIN'), type=argparse.FileType('a+'))
 	parser.add_argument('-l', help="The chunksize in number of characters (only used for encryption/decryption)", type=int, default=2)
 	parser.add_argument('-t', help="Run tests and collect statistics in the file STATS.", dest="test", metavar=('STATS'), type=argparse.FileType('w+'))
 	args = parser.parse_args()
