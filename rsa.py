@@ -164,7 +164,7 @@ def main():
 	# check exclusivity of arguments
 	n = (1 if args.generate else 0) + (1 if args.decrypt else 0) + (1 if args.encrypt else 0) + (1 if args.test else 0)
 	if n != 1:
-		print("error: it's either -g or -d or -e or -t\nerror: you need to specify exactly one of them.")
+		print("error: it's either -g, -d, -e, or -t\nerror: you need to specify exactly one of them.")
 		exit(1)
 		
 	# generate a public/private key pair and save to files
@@ -183,11 +183,11 @@ def main():
 		
 		assert(d*e%phi == 1)
 		
-		content = "\n".join(map(str,[n,e]))
+		content = "\n".join(map(str,[e,n]))
 		pubfile.write(content)
 		pubfile.close()
 		
-		content = "\n".join(map(str,[n,d,p,q]))
+		content = "\n".join(map(str,[d,n]))
 		privfile.write(content)
 		privfile.close()
 		
@@ -206,10 +206,8 @@ def main():
 			exit(1)
 		keyfile.close()
 			
-		n = int(content[0])
-		d = int(content[1])
-		#p = int(content[2])
-		#q = int(content[3])
+		d = int(content[0])
+		n = int(content[1])
 		l = args.l
 		
 		cipherfile.seek(0)
@@ -234,8 +232,8 @@ def main():
 			exit(1)
 		keyfile.close()
 			
-		n = int(content[0])
-		e = int(content[1])
+		e = int(content[0])
+		n = int(content[1])
 		l = args.l
 		
 		plainfile.seek(0)
@@ -252,7 +250,6 @@ def main():
 		l_range = [1,2,3,8,16,32,128]
 		text_range = [1,2,3,4]
 		pq_range = [8,16,32,64,512]
-		de_range = [8,16,32,64,512]
 		
 		statsfile = args.test
 		
