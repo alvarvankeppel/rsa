@@ -9,9 +9,9 @@ optional arguments:
   -h, --help            show this help message and exit
   -g PRIV PUB           Generate keys and store them in the files PRIV and
                         PUB.
-  -e PLAIN PUB CIPHER   Encrypt the file PLAIN using the key PRIV and save to
+  -e PLAIN PUB CIPHER   Encrypt the file PLAIN using the key PUB and save to
                         CIPHER.
-  -d CIPHER PRIV PLAIN  Decrypt the file CIPHER using the key PUB and save to
+  -d CIPHER PRIV PLAIN  Decrypt the file CIPHER using the key PRIV and save to
                         PLAIN.
   -l L                  The chunksize in number of characters (only used for
                         encryption/decryption)
@@ -27,4 +27,7 @@ examples:
 
   decrypt the file cipher.txt:
   rsa.py -d cipher.txt priv.key plain.txt
+
+  collect statistics:
+  rsa.py -t stats.txt
 ```
