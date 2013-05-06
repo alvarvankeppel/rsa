@@ -1,4 +1,5 @@
 import random, unittest, itertools, math, argparse, os
+from time import clock
 
 def kapow(base,expo,m):
 	"""calculates base^expo (mod m) given the arguments are integers, expo >= 0, m>1"""
@@ -155,12 +156,13 @@ def main():
 	parser.add_argument('-e', help="Encrypt the file PLAIN using the key PRIV and save to CIPHER.", dest="encrypt", nargs=3, metavar=('PLAIN','PUB', 'CIPHER'), type=argparse.FileType('a+'))
 	parser.add_argument('-d', help="Decrypt the file CIPHER using the key PUB and save to PLAIN.", dest="decrypt", nargs=3, metavar=('CIPHER','PRIV', 'CIPHER'), type=argparse.FileType('a+'))
 	parser.add_argument('-l', help="The chunksize in number of characters (only used for encryption/decryption)", type=int, default=2)
+	parser.add_argument('-t', help="Run tests and collect statistics in the file STAT.", dest="test", metavar=('STATS'), type=argparse.FileType('w+'))
 	args = parser.parse_args()
 	
 	# check exclusivity of arguments
-	n = (1 if args.generate else 0) + (1 if args.decrypt else 0) + (1 if args.encrypt else 0)
+	n = (1 if args.generate else 0) + (1 if args.decrypt else 0) + (1 if args.encrypt else 0) + (1 if args.test else 0)
 	if n != 1:
-		print("error: it's either -g or -d or -e\nerror: you need to specify exactly one of them.")
+		print("error: it's either -g or -d or -e or -t\nerror: you need to specify exactly one of them.")
 		exit(1)
 		
 	# generate a public/private key pair and save to files
@@ -168,11 +170,14 @@ def main():
 		privfile = args.generate[0]
 		pubfile = args.generate[1]
 	
-		least, most = 2**511, 2**512
+		least, most = 2**255, 2**256
 		((p,t1),(q,t2)) = [gen_prime(least,most) for i in range(2)]
 		n = p * q
 		phi = (p-1)*(q-1)
 		d,e,t3 = gen_de(phi,n)
+		
+		print "n:",n.bit_length()
+		assert(n.bit_length() < 513)
 		
 		assert(d*e%phi == 1)
 		
@@ -197,6 +202,7 @@ def main():
 		if len(content) < 2:
 			print("error: invalid key file")
 			exit(1)
+		keyfile.close()
 			
 		n = int(content[0])
 		d = int(content[1])
@@ -210,6 +216,8 @@ def main():
 		plainfile.write(plain)
 		
 		print("cipehrtext has been successfully decrypted")
+		plainfile.close()
+		cipherfile.close()
 		
 	# encrypt a plain text using a public key from a file
 	elif args.encrypt:
@@ -222,6 +230,7 @@ def main():
 		if len(content) != 2:
 			print("error: invalid key file")
 			exit(1)
+		keyfile.close()
 			
 		n = int(content[0])
 		e = int(content[1])
@@ -233,7 +242,63 @@ def main():
 		cipherfile.write("\n".join(cipher))
 		
 		print("plaintext has been successfully encrypted")
+		plainfile.close()
+		cipherfile.close()
 		
+	# run tests and collect statistics
+	elif args.test:
+		l_range = [1,2,3,8,16,32,128]
+		text_range = [1,2,3,4]
+		pq_range = [8,16,32,64,512]
+		de_range = [8,16,32,64,512]
+		
+		statsfile = args.test
+		
+		statsfile.write("   pq |  text |   l | generation time (us) | encryption time (us) | decryption time (us)\n")
+		
+		proc = 0
+		proc_step = 100.0 / (len(pq_range) * len(text_range) * len(l_range))
+		
+		for pq in pq_range:
+				
+			least, most = 2**(pq-1), 2**pq
+			gen_start = clock()
+			((p,t1),(q,t2)) = [gen_prime(least,most) for i in range(2)]
+			gen_time = clock() - gen_start
+			n = p * q
+			phi = (p-1)*(q-1)
+			d,e,t3 = gen_de(phi,n)
+			
+			assert(d*e%phi == 1)
+			if d*e%phi != 1:
+				print("d*e % phi != 1")
+				continue
+			statsfile.write(" -----+-------+-----+----------------------+----------------------+---------------------\n")
+		
+			for text in text_range:
+				fname = "plain_"+str(text)+".txt"
+				pfile = open(fname, "r")
+				plain = pfile.read()
+				pfile.close()
+				
+				for l in l_range:
+					print("completed " + str(round(proc,2)) + "%")
+					proc += proc_step
+					enc_start = clock()
+					cipher = encrypt_text(plain,l,e,n)
+					enc_time = clock() - enc_start
+					
+					dec_start = clock()
+					plainX = decrypt_text(cipher,l,d,n)
+					dec_time = clock() - dec_start
+					
+					t_g = round(gen_time / 1000000.0, 5)
+					e_g = round(enc_time / 1000000.0, 5)
+					d_g = round(dec_time / 1000000.0, 5)
+					statsfile.write("%5s | %5s | %3s | %20s | %20s | %20s\n" % (pq, text, l, t_g, e_g, d_g))
+		
+		print("testing completed running")
+		statsfile.close()
 	
 if __name__ == '__main__':
 	main()
