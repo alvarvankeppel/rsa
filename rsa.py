@@ -151,7 +151,7 @@ def main():
 	# setup command line arguments
 	parser = argparse.ArgumentParser(
 		description='Generation of keys and encryption/decryption using the RSA algorithm.',
-		usage='%(prog)s ',
+		usage='%(prog)s [options] [-g|-e|-d|-t] [args]',
 		formatter_class=argparse.RawDescriptionHelpFormatter,
 		epilog=examples)
 	parser.add_argument('-g', help="Generate keys and store them in the files PRIV and PUB.", dest="generate", nargs=2, metavar=('PRIV','PUB'), type=argparse.FileType('w'))

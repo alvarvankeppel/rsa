@@ -1,7 +1,7 @@
 This is the RSA lab of group 2 for the cryptology course.
 
 ```
-usage: rsa.py 
+usage: rsa.py [options] [-g|-e|-d|-t] [args] 
 
 Generation of keys and encryption/decryption using the RSA algorithm.
 
