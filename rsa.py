@@ -107,12 +107,12 @@ def decode_string(num):
 		q,r = divmod(num,256)
 		str.append(chr(r))
 		num = q
-	return ''.join(str)
+	return ''.join(str[::-1])
 	
 def encode_string(str):
 	"""Turns a multicharacter string into a numerical representation in base 256 where each character is represented in a decimal form (ASCII)"""
 	acc = 0
-	for s in str[::-1]:
+	for s in str:
 		acc = acc * 256 + ord(s)
 	return acc
 	
@@ -134,6 +134,52 @@ def decrypt_text(cipher, l, d, n):
 		plain.append(decode_string(decrypt(int(c),d,n)))
 	plaintext = ''.join(plain)
 	return plaintext[0:len(plaintext)-numzeros]
+	
+def crack_text(l,e,n,cipherlist):
+	"""Cracks a list of encrypted chunks (representing [l] characters) using factorization. """
+	crack_start = clock()
+	not_cracked = map(long,cipherlist)
+	exp_table = {}
+	decryption_table = {0:0}
+	i = 1L
+	next_power_of_two = 1
+	r = 0
+	while not_cracked != []:
+		i_exp = kapow(i,e,n)
+		inv_i_exp = ext_euclid(i_exp,n)[1] % n
+		exp_table[i_exp] = i
+		
+		# check if m = ij for this i
+		for m_e in not_cracked:
+			temp = m_e * inv_i_exp % n
+			if temp in exp_table:
+				decryption_table[m_e] = exp_table[temp] * i
+				
+		not_cracked = filter(lambda x: x not in decryption_table, not_cracked)
+		
+		if i == next_power_of_two:
+			plain = create_plain_and_print_crack_progress(cipherlist, decryption_table, not_cracked, crack_start, r, l)
+			next_power_of_two *= 2
+			r += 1
+		
+		i += 1
+		
+	return create_plain_and_print_crack_progress(cipherlist, decryption_table, not_cracked, crack_start, r, l)
+	
+def create_plain_and_print_crack_progress(cipherlist, decryption_table, not_cracked, start_time, r, l):
+	crack_time = clock() - start_time
+	perc_done_now = 100 - round(100.0 * float(len(not_cracked)) / len(cipherlist))
+	print "at r = %2s cracked %5s%% in %7s seconds" % (r, perc_done_now, round(crack_time * 1,5))
+	plain = []
+	for c in cipherlist:
+		if long(c) in decryption_table:
+			plain.append(decode_string(decryption_table[long(c)]))
+		else:
+			plain.append('_'*l)
+	plaintext = ''.join(plain)
+	print plaintext + "\n"
+	return plaintext
+	
 
 def main():
 	# example for help text
@@ -146,25 +192,28 @@ def main():
 	examples+= "  decrypt the file cipher.txt:\n"
 	examples+= "  " + prog + " -d cipher.txt priv.key plain.txt\n\n"
 	examples+= "  collect statistics:\n"
-	examples+= "  " + prog + " -t stats.txt"
+	examples+= "  " + prog + " -t stats.txt\n\n"
+	examples+= "  break the file cipher.txt with L=3:\n"
+	examples+= "  " + prog + " -l 3 -b cipher.txt plain.txt\n\n"
 
 	# setup command line arguments
 	parser = argparse.ArgumentParser(
-		description='Generation of keys and encryption/decryption using the RSA algorithm.',
+		description='generation of keys and encryption/decryption using the RSA algorithm.',
 		usage='%(prog)s [options] [-g|-e|-d|-t] [args]',
 		formatter_class=argparse.RawDescriptionHelpFormatter,
 		epilog=examples)
-	parser.add_argument('-g', help="Generate keys and store them in the files PRIV and PUB.", dest="generate", nargs=2, metavar=('PRIV','PUB'), type=argparse.FileType('w'))
-	parser.add_argument('-e', help="Encrypt the file PLAIN using the key PUB and save to CIPHER.", dest="encrypt", nargs=3, metavar=('PLAIN','PUB', 'CIPHER'), type=argparse.FileType('a+'))
-	parser.add_argument('-d', help="Decrypt the file CIPHER using the key PRIV and save to PLAIN.", dest="decrypt", nargs=3, metavar=('CIPHER','PRIV', 'PLAIN'), type=argparse.FileType('a+'))
-	parser.add_argument('-l', help="The chunksize in number of characters (only used for encryption/decryption)", type=int, default=2)
-	parser.add_argument('-t', help="Run tests and collect statistics in the file STATS.", dest="test", metavar=('STATS'), type=argparse.FileType('w+'))
+	parser.add_argument('-g', help="generate keys and store them in the files PRIV and PUB.", dest="generate", nargs=2, metavar=('PRIV','PUB'), type=argparse.FileType('w'))
+	parser.add_argument('-e', help="encrypt the file PLAIN using the key PUB and save to CIPHER.", dest="encrypt", nargs=3, metavar=('PLAIN','PUB', 'CIPHER'), type=argparse.FileType('a+'))
+	parser.add_argument('-d', help="decrypt the file CIPHER using the key PRIV and save to PLAIN.", dest="decrypt", nargs=3, metavar=('CIPHER','PRIV', 'PLAIN'), type=argparse.FileType('a+'))
+	parser.add_argument('-c', help="crack the ciphertext in the file CIPHER using public key PUB and save to PLAIN.", dest="crack", nargs=3, metavar=('CIPHER', 'PUB', 'PLAIN'), type=argparse.FileType('a+'))
+	parser.add_argument('-t', help="run tests and collect statistics in the file STATS.", dest="test", metavar=('STATS'), type=argparse.FileType('w+'))
+	parser.add_argument('-l', help="the chunksize in number of characters (only used for encryption/decryption)", type=int, default=2)
 	args = parser.parse_args()
 	
 	# check exclusivity of arguments
-	n = (1 if args.generate else 0) + (1 if args.decrypt else 0) + (1 if args.encrypt else 0) + (1 if args.test else 0)
+	n = (1 if args.generate else 0) + (1 if args.decrypt else 0) + (1 if args.encrypt else 0) + (1 if args.test else 0) + (1 if args.crack else 0)
 	if n != 1:
-		print("error: it's either -g, -d, -e, or -t\nerror: you need to specify exactly one of them.")
+		print("error: it's either -g, -d, -e, -t, or -b\nerror: you need to specify exactly one of them.")
 		exit(1)
 		
 	# generate a public/private key pair and save to files
@@ -245,6 +294,35 @@ def main():
 		plainfile.close()
 		cipherfile.close()
 		
+	# break a cipher text
+	elif args.crack:
+		cipherfile = args.crack[0]
+		keyfile = args.crack[1]
+		plainfile = args.crack[2]
+		l = args.l
+		
+		keyfile.seek(0)
+		content = keyfile.read().split()
+		if len(content) != 2:
+			print("error: invalid key file")
+			exit(1)
+		keyfile.close()
+		e = int(content[0])
+		n = int(content[1])
+		
+		print "starting to crack for l =",l
+		
+		cipherfile.seek(0)
+		cipher = cipherfile.read().split("\n")
+		cipher= filter(lambda x: x != '', cipher)
+		
+		plain = crack_text(l,e,n,cipher)
+		plainfile.write(plain)
+		
+		print("ciphertext has been successfully cracked")
+		plainfile.close()
+		cipherfile.close()
+		
 	# run tests and collect statistics
 	elif args.test:
 		l_range = [1,2,3,8,16,32,128]
@@ -302,6 +380,7 @@ def main():
 		
 		print("testing completed running")
 		statsfile.close()
+	
 	
 if __name__ == '__main__':
 	main()
