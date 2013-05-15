@@ -194,12 +194,12 @@ def main():
 	examples+= "  collect statistics:\n"
 	examples+= "  " + prog + " -t stats.txt\n\n"
 	examples+= "  break the file cipher.txt with L=3:\n"
-	examples+= "  " + prog + " -l 3 -b cipher.txt plain.txt\n\n"
+	examples+= "  " + prog + " -l 3 -c cipher.txt pub.key plain.txt\n\n"
 
 	# setup command line arguments
 	parser = argparse.ArgumentParser(
 		description='generation of keys and encryption/decryption using the RSA algorithm.',
-		usage='%(prog)s [options] [-g|-e|-d|-t] [args]',
+		usage='%(prog)s [options] [-g|-e|-d|-c|-t] [args]',
 		formatter_class=argparse.RawDescriptionHelpFormatter,
 		epilog=examples)
 	parser.add_argument('-g', help="generate keys and store them in the files PRIV and PUB.", dest="generate", nargs=2, metavar=('PRIV','PUB'), type=argparse.FileType('w'))
@@ -207,13 +207,13 @@ def main():
 	parser.add_argument('-d', help="decrypt the file CIPHER using the key PRIV and save to PLAIN.", dest="decrypt", nargs=3, metavar=('CIPHER','PRIV', 'PLAIN'), type=argparse.FileType('a+'))
 	parser.add_argument('-c', help="crack the ciphertext in the file CIPHER using public key PUB and save to PLAIN.", dest="crack", nargs=3, metavar=('CIPHER', 'PUB', 'PLAIN'), type=argparse.FileType('a+'))
 	parser.add_argument('-t', help="run tests and collect statistics in the file STATS.", dest="test", metavar=('STATS'), type=argparse.FileType('w+'))
-	parser.add_argument('-l', help="the chunksize in number of characters (only used for encryption/decryption)", type=int, default=2)
+	parser.add_argument('-l', help="the chunksize in number of characters (only used while generating keys or running tests)", type=int, default=2)
 	args = parser.parse_args()
 	
 	# check exclusivity of arguments
 	n = (1 if args.generate else 0) + (1 if args.decrypt else 0) + (1 if args.encrypt else 0) + (1 if args.test else 0) + (1 if args.crack else 0)
 	if n != 1:
-		print("error: it's either -g, -d, -e, -t, or -b\nerror: you need to specify exactly one of them.")
+		print("error: it's either -g, -d, -e, -t, or -c\nerror: you need to specify exactly one of them.")
 		exit(1)
 		
 	# generate a public/private key pair and save to files

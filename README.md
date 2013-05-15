@@ -1,21 +1,23 @@
 This is the RSA lab of group 2 for the cryptology course.
 
 ```
-usage: rsa.py [options] [-g|-e|-d|-t] [args] 
+usage: rsa.py [options] [-g|-e|-d|-c|-t] [args]
 
-Generation of keys and encryption/decryption using the RSA algorithm.
+generation of keys and encryption/decryption using the RSA algorithm.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -g PRIV PUB           Generate keys and store them in the files PRIV and
+  -g PRIV PUB           generate keys and store them in the files PRIV and
                         PUB.
-  -e PLAIN PUB CIPHER   Encrypt the file PLAIN using the key PUB and save to
+  -e PLAIN PUB CIPHER   encrypt the file PLAIN using the key PUB and save to
                         CIPHER.
-  -d CIPHER PRIV PLAIN  Decrypt the file CIPHER using the key PRIV and save to
+  -d CIPHER PRIV PLAIN  decrypt the file CIPHER using the key PRIV and save to
                         PLAIN.
-  -l L                  The chunksize in number of characters (only used for
-                        encryption/decryption)
-  -t STATS              Run tests and collect statistics in the file STATS.
+  -c CIPHER PUB PLAIN   crack the ciphertext in the file CIPHER using public
+                        key PUB and save to PLAIN.
+  -t STATS              run tests and collect statistics in the file STATS.
+  -l L                  the chunksize in number of characters (only used while
+                        generating keys or running tests)
 
 examples:
 
@@ -30,4 +32,7 @@ examples:
 
   collect statistics:
   rsa.py -t stats.txt
+
+  break the file cipher.txt with L=3:
+  rsa.py -l 3 -c cipher.txt pub.key plain.txt
 ```
