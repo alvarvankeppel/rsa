@@ -3,7 +3,8 @@ from time import clock
 
 def kapow(base,expo,m):
 	"""calculates base^expo (mod m) given the arguments are integers, expo >= 0, m>1"""
-	assert(set([type(base),type(expo),type(m)]).issubset(set([int,long])))
+	#assert(set([type(base),type(expo),type(m)]).issubset(set([int,int]))) # python 3
+	assert(set([type(base),type(expo),type(m)]).issubset(set([long,int]))) # python 2
 	assert(expo >= 0)
 	assert(m > 0)
 	if m == 1:
@@ -138,10 +139,10 @@ def decrypt_text(cipher, l, d, n):
 def crack_text(l,e,n,cipherlist):
 	"""Cracks a list of encrypted chunks (representing [l] characters) using factorization. """
 	crack_start = clock()
-	not_cracked = map(long,cipherlist)
+	not_cracked = list(map(int,cipherlist))
 	exp_table = {}
 	decryption_table = {0:0}
-	i = 1L
+	i = int(1)
 	next_power_of_two = 1
 	r = 0
 	while not_cracked != []:
@@ -155,7 +156,7 @@ def crack_text(l,e,n,cipherlist):
 			if temp in exp_table:
 				decryption_table[m_e] = exp_table[temp] * i
 				
-		not_cracked = filter(lambda x: x not in decryption_table, not_cracked)
+		not_cracked = list(filter(lambda x: x not in decryption_table, not_cracked))
 		
 		if i == next_power_of_two:
 			plain = create_plain_and_print_crack_progress(cipherlist, decryption_table, not_cracked, crack_start, r, l)
@@ -169,15 +170,15 @@ def crack_text(l,e,n,cipherlist):
 def create_plain_and_print_crack_progress(cipherlist, decryption_table, not_cracked, start_time, r, l):
 	crack_time = clock() - start_time
 	perc_done_now = 100 - round(100.0 * float(len(not_cracked)) / len(cipherlist))
-	print "at r = %2s cracked %5s%% in %7s seconds" % (r, perc_done_now, round(crack_time * 1,5))
+	print("at r = %2s cracked %5s%% in %7s seconds" % (r, perc_done_now, round(crack_time * 1,5)))
 	plain = []
 	for c in cipherlist:
-		if long(c) in decryption_table:
-			plain.append(decode_string(decryption_table[long(c)]))
+		if int(c) in decryption_table:
+			plain.append(decode_string(decryption_table[int(c)]))
 		else:
 			plain.append('_'*l)
 	plaintext = ''.join(plain)
-	print plaintext + "\n"
+	print(plaintext + "\n")
 	return plaintext
 	
 
@@ -227,7 +228,6 @@ def main():
 		phi = (p-1)*(q-1)
 		d,e,t3 = gen_de(phi,n)
 		
-		print "n:",n.bit_length()
 		assert(n.bit_length() < 513)
 		
 		assert(d*e%phi == 1)
@@ -310,11 +310,11 @@ def main():
 		e = int(content[0])
 		n = int(content[1])
 		
-		print "starting to crack for l =",l
+		print("starting to crack for l ="+str(l))
 		
 		cipherfile.seek(0)
 		cipher = cipherfile.read().split("\n")
-		cipher= filter(lambda x: x != '', cipher)
+		cipher= list(filter(lambda x: x != '', cipher))
 		
 		plain = crack_text(l,e,n,cipher)
 		plainfile.write(plain)
