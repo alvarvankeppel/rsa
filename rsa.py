@@ -1,10 +1,10 @@
 import random, unittest, itertools, math, argparse, os
-from time import clock
+from time import clock,time
 
 def kapow(base,expo,m):
 	"""calculates base^expo (mod m) given the arguments are integers, expo >= 0, m>1"""
 	#assert(set([type(base),type(expo),type(m)]).issubset(set([int,int]))) # python 3
-	assert(set([type(base),type(expo),type(m)]).issubset(set([long,int]))) # python 2
+	#assert(set([type(base),type(expo),type(m)]).issubset(set([long,int]))) # python 2
 	assert(expo >= 0)
 	assert(m > 0)
 	if m == 1:
@@ -135,6 +135,49 @@ def decrypt_text(cipher, l, d, n):
 		plain.append(decode_string(decrypt(int(c),d,n)))
 	plaintext = ''.join(plain)
 	return plaintext[0:len(plaintext)-numzeros]
+
+def crack_text_brute_force(e,n,cipherlist, l = 0):
+	"""Cracks a list of encrypted chunks using brute force"""
+	cipherlist = map(int,cipherlist)
+	crack_start = time()
+	decryption_table = {}
+	not_cracked = set(cipherlist)
+	unique_chunks = len(not_cracked)
+	i = 0
+	next_update = 1000
+	last_update = crack_start
+	guessed_L = l
+	while len(not_cracked) != 0:
+		i_e = kapow(i,e,n)
+		if i_e in not_cracked:
+			decryption_table[i_e] = i
+			not_cracked.remove(i_e)
+			guessed_L = max(guessed_L, len(decode_string(i)))
+						
+
+		if i == next_update:
+			perc_done_now = 100 - round(100.0 * float(len(not_cracked)) / unique_chunks)
+			print("cracked %5s%% in %7s seconds where i = %10s" % (perc_done_now, round(time()-crack_start), i))
+			if guessed_L != 0:
+				print(partial_decryption(decryption_table,cipherlist,guessed_L))
+			
+		
+			next_update += 1000
+		i += 1
+		
+	return partial_decryption(decryption_table,cipherlist,guessed_L)
+
+def partial_decryption(decryption_table,cipherlist,l):
+	plain = []
+	for c in cipherlist:
+		if int(c) in decryption_table:
+			plain.append(decode_string(decryption_table[int(c)]))
+		else:
+			plain.append('_'*l)
+	return ''.join(plain)
+
+		
+	
 	
 def crack_text(l,e,n,cipherlist):
 	"""Cracks a list of encrypted chunks (representing [l] characters) using factorization. """
@@ -207,6 +250,7 @@ def main():
 	parser.add_argument('-e', help="encrypt the file PLAIN using the key PUB and save to CIPHER.", dest="encrypt", nargs=3, metavar=('PLAIN','PUB', 'CIPHER'), type=argparse.FileType('a+'))
 	parser.add_argument('-d', help="decrypt the file CIPHER using the key PRIV and save to PLAIN.", dest="decrypt", nargs=3, metavar=('CIPHER','PRIV', 'PLAIN'), type=argparse.FileType('a+'))
 	parser.add_argument('-c', help="crack the ciphertext in the file CIPHER using public key PUB and save to PLAIN.", dest="crack", nargs=3, metavar=('CIPHER', 'PUB', 'PLAIN'), type=argparse.FileType('a+'))
+	parser.add_argument('-m', help="the method used for cracking. defaults to factor", dest='method',choices=['brute', 'factor'])
 	parser.add_argument('-t', help="run tests and collect statistics in the file STATS.", dest="test", metavar=('STATS'), type=argparse.FileType('w+'))
 	parser.add_argument('-l', help="the chunksize in number of characters (only used while generating keys or running tests)", type=int, default=2)
 	args = parser.parse_args()
@@ -316,7 +360,10 @@ def main():
 		cipher = cipherfile.read().split("\n")
 		cipher= list(filter(lambda x: x != '', cipher))
 		
-		plain = crack_text(l,e,n,cipher)
+		if args.method == 'brute':
+			plain = crack_text_brute_force(e,n,cipher)
+		else:
+			plain = crack_text(l,e,n,cipher)
 		plainfile.write(plain)
 		
 		print("ciphertext has been successfully cracked")
